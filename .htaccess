@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews
+    </IfModule>
+
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule !^index.php index.php [NE,NC,L]
+
+    RewriteCond %{HTTP_PROXY_CONNECTION} !^$
+    RewriteRule !^index.php index.php [NE,NC,L]
+
+</IfModule>
