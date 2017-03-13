@@ -14,13 +14,17 @@ const server = Http.createServer(function(req, res) {
         let headers = req.headers;
         delete headers.host;
         delete headers['proxy-connection'];
+        headers.connection = 'close';
+        headers.x_forwarded_for = '127.0.0.1';
+        headers.client_ip = '127.0.0.1';
         let options = {
             hostname: r.host,
             port: r.port || ((r.scheme == 'https') ? 443 : 80),
-            path: (r.path || '/') + (r.query ? '?' + r.query : ''),
+            path: r.path + (r.query ? '?' + r.query : ''),
             method: req.method,
             headers: headers
         };
+        console.log(options);
         let request = Http.request(options, (response) => {
             let bufferHelper = new BufferHelper();
             response.on("data", function(chunk) {
