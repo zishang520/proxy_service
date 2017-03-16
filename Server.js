@@ -19,21 +19,21 @@ const server = Http.createServer(function(req, res) {
         headers.client_ip = '127.0.0.1';
         let options = {
             hostname: r.host,
-            port: r.port || ((r.scheme == 'https') ? 443 : 80),
+            port: r.port || 80,
             path: r.path + (r.query ? '?' + r.query : ''),
             method: req.method,
             headers: headers
         };
-        console.log(options);
         let request = Http.request(options, (response) => {
-            let bufferHelper = new BufferHelper();
+            // let bufferHelper = new BufferHelper();
+            res.writeHead(response.statusCode, response.headers);
             response.on("data", function(chunk) {
-                bufferHelper.concat(chunk);
+                // bufferHelper.concat(chunk);
+                res.write(chunk);
             });
             response.on('end', function() {
-                let html = bufferHelper.toBuffer();
-                res.writeHead(response.statusCode, response.headers);
-                res.end(html);
+                // let html = bufferHelper.toBuffer();
+                res.end();
             });
         });
         request.on('error', (e) => {
@@ -55,5 +55,13 @@ server.on('connect', (req, cltSocket, head) => {
         srvSocket.pipe(cltSocket);
         cltSocket.pipe(srvSocket);
     });
+    srvSocket.on('error', (e) => {
+        console.log(`problem with request: ${e.message}`);
+    });
 });
-server.listen(8089);
+let port = 8080,
+    argv = process.argv.splice(2);
+if (argv.length === 0 || (/\d+/).test(argv[0])) {
+    port = argv[0];
+}
+server.listen(port);
