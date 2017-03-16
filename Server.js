@@ -61,7 +61,7 @@ server.on('connect', (req, cltSocket, head) => {
 });
 let port = 8080,
     argv = process.argv.splice(2);
-if (1 in argv && (/\d+/).test(argv[0])) {
+if (0 in argv && (/\d+/).test(argv[0])) {
     port = argv[0];
 }
 server.listen(port);
