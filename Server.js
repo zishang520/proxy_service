@@ -3,43 +3,42 @@ const Http = require('http');
 const net = require('net');
 const url = require('url');
 const server = Http.createServer(function(req, res) {
-    let BufferHelper = require(__dirname + '/bufferhelper.js');
-    let bufferHelper = new BufferHelper();
-    req.on("data", function(chunk) {
-        bufferHelper.concat(chunk);
+    let r = url.parse(req.url);
+    let headers = req.headers;
+    delete headers.host;
+    delete headers['proxy-connection'];
+    headers.connection = 'close';
+    headers.x_forwarded_for = '127.0.0.1';
+    headers.client_ip = '127.0.0.1';
+    let options = {
+        hostname: r.host,
+        port: r.port || 80,
+        path: r.path,
+        method: req.method,
+        headers: headers
+    };
+    // 创建请求
+    let request = Http.request(options, (response) => {
+        // 回显
+        res.writeHead(response.statusCode, response.headers);
+        // 发送数据到浏览器
+        response.on("data", function(chunk) {
+            res.write(chunk);
+        });
+        // 结束
+        response.on('end', function() {
+            res.end();
+        });
     });
-    req.on('end', function() {
-        let body = bufferHelper.toBuffer();
-        let r = url.parse(req.url);
-        let headers = req.headers;
-        delete headers.host;
-        delete headers['proxy-connection'];
-        headers.connection = 'close';
-        headers.x_forwarded_for = '127.0.0.1';
-        headers.client_ip = '127.0.0.1';
-        let options = {
-            hostname: r.host,
-            port: r.port || 80,
-            path: r.path + (r.query ? '?' + r.query : ''),
-            method: req.method,
-            headers: headers
-        };
-        let request = Http.request(options, (response) => {
-            // let bufferHelper = new BufferHelper();
-            res.writeHead(response.statusCode, response.headers);
-            response.on("data", function(chunk) {
-                // bufferHelper.concat(chunk);
-                res.write(chunk);
-            });
-            response.on('end', function() {
-                // let html = bufferHelper.toBuffer();
-                res.end();
-            });
-        });
-        request.on('error', (e) => {
-            console.log(`problem with request: ${e.message}`);
-        });
-        request.write(body);
+    request.on('error', (e) => {
+        console.log(`problem with request: ${e.message}`);
+    });
+    // Request Data To Origin Server
+    req.on("data", function(chunk) {
+        request.write(chunk);
+    });
+    // Request End
+    req.on('end', function(data) {
         request.end();
     });
 });
